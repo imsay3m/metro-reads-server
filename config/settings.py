@@ -79,22 +79,29 @@ TEMPLATES = [
 WSGI_APPLICATION = "config.wsgi.application"
 
 # Database
-DATABASES = {"default": {}}
+# DATABASES = {"default": {}}
 
-if "DATABASE_URL" in os.environ:
-    DATABASES["default"] = dj_database_url.config(
-        conn_max_age=600,
-        ssl_require=True,
+# if "DATABASE_URL" in os.environ:
+#     DATABASES["default"] = dj_database_url.config(
+#         conn_max_age=600,
+#         ssl_require=True,
+#     )
+# else:
+#     DATABASES["default"] = {
+#         "ENGINE": "django.db.backends.postgresql",
+#         "NAME": os.getenv("DB_NAME"),
+#         "USER": os.getenv("DB_USER"),
+#         "PASSWORD": os.getenv("DB_PASS"),
+#         "HOST": os.getenv("DB_HOST", "db"),
+#         "PORT": os.getenv("DB_PORT", "5432"),
+#     }
+
+
+DATABASES = {
+    "default": dj_database_url.config(
+        default="postgres://metro_reads_db_user:Qk61PlyUn7uB0Xg0WEFege3bhGKYPlwA@dpg-d2ab35hr0fns7396iigg-a.singapore-postgres.render.com/metro_reads_db",
     )
-else:
-    DATABASES["default"] = {
-        "ENGINE": "django.db.backends.postgresql",
-        "NAME": os.getenv("DB_NAME"),
-        "USER": os.getenv("DB_USER"),
-        "PASSWORD": os.getenv("DB_PASS"),
-        "HOST": os.getenv("DB_HOST", "db"),
-        "PORT": os.getenv("DB_PORT", "5432"),
-    }
+}
 
 # Password validation
 AUTH_PASSWORD_VALIDATORS = [
