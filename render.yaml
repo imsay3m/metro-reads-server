@@ -2,7 +2,7 @@ services:
     # ----------------- #
     #  Database Service #
     # ----------------- #
-    - type: psql
+    - type: postgres
       name: metro-reads-db
       plan: free
       databaseName: metro_reads_db
