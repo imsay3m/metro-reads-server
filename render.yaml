@@ -14,10 +14,6 @@ services:
             generateValue: true
           - key: PYTHONUNBUFFERED
             value: 1
-      disks:
-          - name: media
-            mountPath: /app/media
-            sizeGB: 1
 
     - type: worker
       name: metro-reads-celery-worker
