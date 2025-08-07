@@ -22,7 +22,7 @@ COPY requirements.txt /app/
 # Install python dependencies into a virtual environment for a clean setup
 RUN python -m venv /opt/venv
 ENV PATH="/opt/venv/bin:$PATH"
-RUN pip install --no-cache-dir -r requirements.txt
+RUN pip install --no-cache-dir -r requirements.txt --ignore-version
 
 
 # --- STAGE 2: Final Stage ---
