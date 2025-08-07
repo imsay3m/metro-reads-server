@@ -30,7 +30,6 @@ services:
                 type: web
                 name: metro-reads-server
                 envVarKey: SECRET_KEY
-      startCommand: celery -A config worker --loglevel=info
 
     - type: worker
       name: metro-reads-celery-beat
@@ -47,4 +46,3 @@ services:
                 type: web
                 name: metro-reads-server
                 envVarKey: SECRET_KEY
-      startCommand: celery -A config beat --loglevel=info --scheduler django_celery_beat.schedulers:DatabaseScheduler
