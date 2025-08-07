@@ -45,8 +45,13 @@ ENV PATH="/opt/venv/bin:$PATH"
 # Copy the project code into the container
 COPY . /app/
 
+# Copy the new startup script into the container
+COPY ./entrypoint.sh /app/entrypoint.sh
+# Make sure the script is executable inside the container
+RUN chmod +x /app/entrypoint.sh
+
 # Expose the port Gunicorn will run on
 EXPOSE 8000
 
-# Command to run the application
-CMD ["gunicorn", "config.wsgi:application", "--bind", "0.0.0.0:8000"]
+# Command to run the application. REMOVE the old CMD instruction. The entrypoint script will now handle starting Gunicorn.
+# CMD ["gunicorn", "config.wsgi:application", "--bind", "0.0.0.0:8000"]
