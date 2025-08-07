@@ -29,6 +29,7 @@ RUN SECRET_KEY="dummy" python manage.py collectstatic --noinput
 
 
 # --- STAGE 2: Final Stage ---
+# This stage creates the small, final production image
 FROM python:3.11.13-slim-bookworm
 
 ENV PYTHONDONTWRITEBYTECODE 1
@@ -43,15 +44,15 @@ ENV PATH="/opt/venv/bin:$PATH"
 # Copy the collected static files from the builder stage
 COPY --from=builder /app/staticfiles /app/staticfiles
 
-# Copy the media directory (though it will be empty on build)
-COPY --from=builder /app/media /app/media
-
 # Copy the entrypoint script
 COPY --from=builder /app/entrypoint.sh /app/entrypoint.sh
 RUN chmod +x /app/entrypoint.sh
 
 # Copy the rest of the application code
 COPY . /app/
+
+# Render's persistent disk will be mounted at this location when the container runs.
+RUN mkdir -p /app/media && chown -R 1000 /app/media
 
 # Expose the port Gunicorn will run on
 EXPOSE 8000
