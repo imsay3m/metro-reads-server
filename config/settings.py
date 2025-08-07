@@ -1,5 +1,6 @@
 import os
 from pathlib import Path
+from urllib.parse import urlparse
 
 import dj_database_url
 from celery.schedules import crontab
@@ -133,27 +134,61 @@ REST_FRAMEWORK = {
     ),
 }
 
-# Redis Caching
+REDIS_URL = os.getenv("REDIS_URL")
+# A dictionary to hold connection options, especially for SSL
+CELERY_REDIS_SSL_OPTIONS = {}
+CACHE_REDIS_SSL_OPTIONS = {}
+
+if REDIS_URL:
+    # If we are on a platform like Render with a REDIS_URL
+    redis_info = urlparse(REDIS_URL)
+
+    # Check if the scheme is 'rediss' to enable SSL
+    if redis_info.scheme == "rediss":
+        # Celery SSL connection options
+        CELERY_REDIS_SSL_OPTIONS = {"ssl_cert_reqs": None}
+        # Django-redis SSL connection options
+        CACHE_REDIS_SSL_OPTIONS = {"SSL_CERT_REQS": None}
+
+    # Celery configuration
+    CELERY_BROKER_URL = f"{REDIS_URL}/1"
+    CELERY_BROKER_USE_SSL = CELERY_REDIS_SSL_OPTIONS
+    CELERY_REDIS_BACKEND_USE_SSL = CELERY_REDIS_SSL_OPTIONS
+
+    CELERY_RESULT_BACKEND = f"{REDIS_URL}/1"
+
+    # Django-redis Caching configuration
+    CACHE_LOCATION = f"{REDIS_URL}/0"
+else:
+    # Fallback for local Docker development (no SSL)
+    REDIS_HOST = os.getenv("REDIS_HOST", "redis")
+    REDIS_PORT = os.getenv("REDIS_PORT", "6379")
+
+    CELERY_BROKER_URL = f"redis://{REDIS_HOST}:{REDIS_PORT}/1"
+    CELERY_RESULT_BACKEND = f"redis://{REDIS_HOST}:{REDIS_PORT}/1"
+    CACHE_LOCATION = f"redis://{REDIS_HOST}:{REDIS_PORT}/0"
+
+# --- Caching Configuration ---
 CACHES = {
     "default": {
         "BACKEND": "django_redis.cache.RedisCache",
-        "LOCATION": f"redis://{os.getenv('REDIS_HOST', '127.0.0.1')}:{os.getenv('REDIS_PORT', '6379')}/0",
+        "LOCATION": CACHE_LOCATION,
         "OPTIONS": {
             "CLIENT_CLASS": "django_redis.client.DefaultClient",
             "COMPRESSOR": "django_redis.compressors.zlib.ZlibCompressor",
+            # This will be empty for local dev and populated for Render
+            "CONNECTION_POOL_KWARGS": CACHE_REDIS_SSL_OPTIONS,
         },
     }
 }
 
-# Celery Configuration
-CELERY_BROKER_URL = f"redis://{os.getenv('REDIS_HOST', '127.0.0.1')}:{os.getenv('REDIS_PORT', '6379')}/1"
-CELERY_RESULT_BACKEND = f"redis://{os.getenv('REDIS_HOST', '127.0.0.1')}:{os.getenv('REDIS_PORT', '6379')}/1"
+# --- Celery App Configuration ---
 CELERY_ACCEPT_CONTENT = ["application/json"]
 CELERY_TASK_SERIALIZER = "json"
 CELERY_RESULT_SERIALIZER = "json"
 CELERY_TIMEZONE = "UTC"
 
-# In CELERY_BEAT_SCHEDULE
+# --- Celery Beat Schedule ---
 CELERY_BEAT_SCHEDULE = {
     "check-expired-queues-every-30-mins": {
         "task": "apps.queues.tasks.check_expired_queues",
@@ -161,11 +196,11 @@ CELERY_BEAT_SCHEDULE = {
     },
     "send-due-date-reminders-daily": {
         "task": "apps.loans.tasks.send_due_date_reminders",
-        "schedule": crontab(hour=8, minute=0),  # 8:00 AM UTC
+        "schedule": crontab(hour=8, minute=0),
     },
     "calculate-fines-daily": {
         "task": "apps.loans.tasks.calculate_and_notify_fines",
-        "schedule": crontab(hour=8, minute=5),  # 8:05 AM UTC, shortly after reminders
+        "schedule": crontab(hour=8, minute=5),
     },
 }
 
