@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+
+        <!-- THE ERROR IS HERE: We opened a block but never closed it. -->
+        <title>
+            {% block title %} Metro Reads - Notification {% endblock title%}
+        </title>
+
+        <!-- Basic styles and MSO compliance -->
+    </head>
+    <body
+        style="
+            margin: 0;
+            padding: 0;
+            background-color: #f4f4f4;
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            color: #333333;
+        "
+    >
+        <table
+            role="presentation"
+            cellspacing="0"
+            cellpadding="0"
+            border="0"
+            width="100%"
+            style="background-color: #f4f4f4"
+        >
+            <tr>
+                <td align="center" style="padding: 20px 0">
+                    <table
+                        role="presentation"
+                        cellspacing="0"
+                        cellpadding="0"
+                        border="0"
+                        width="600"
+                        style="
+                            background-color: #ffffff;
+                            border-radius: 8px;
+                            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+                            max-width: 600px;
+                            width: 100%;
+                        "
+                    >
+                        <!-- Header Section -->
+                        <tr>
+                            <td
+                                style="
+                                    background: linear-gradient(
+                                        135deg,
+                                        #2c5aa0 0%,
+                                        #1e3a5f 100%
+                                    );
+                                    padding: 30px 40px;
+                                    text-align: center;
+                                    border-radius: 8px 8px 0 0;
+                                "
+                            >
+                                <div
+                                    style="
+                                        background-color: #ffffff;
+                                        display: inline-block;
+                                        padding: 15px 25px;
+                                        border-radius: 6px;
+                                        margin-bottom: 20px;
+                                    "
+                                >
+                                    <h1
+                                        style="
+                                            margin: 0;
+                                            color: #2c5aa0;
+                                            font-size: 28px;
+                                            font-weight: bold;
+                                        "
+                                    >
+                                        📚 Metro Reads
+                                    </h1>
+                                </div>
+                                <h2
+                                    style="
+                                        margin: 0;
+                                        color: #ffffff;
+                                        font-size: 24px;
+                                        font-weight: 300;
+                                    "
+                                >
+                                    {% block email_title %}Library
+                                    Notification{% endblock email_title %}
+                                </h2>
+                            </td>
+                        </tr>
+
+                        <!-- Main Content Section -->
+                        <tr>
+                            <td style="padding: 40px">
+                                <h3
+                                    style="
+                                        margin: 0 0 15px 0;
+                                        color: #2c5aa0;
+                                        font-size: 20px;
+                                        font-weight: 600;
+                                    "
+                                >
+                                    Hello {% block user_name %}Library
+                                    Member{%endblock user_name %},
+                                </h3>
+
+                                {% block content %}
+                                <!-- Specific email content will be injected here -->
+                                <p
+                                    style="
+                                        margin: 0;
+                                        font-size: 16px;
+                                        line-height: 1.6;
+                                        color: #555555;
+                                    "
+                                >
+                                    We have an important update regarding your
+                                    library account.
+                                </p>
+                                {% endblock content %}
+                            </td>
+                        </tr>
+
+                        <!-- Footer Section -->
+                        <tr>
+                            <td
+                                style="
+                                    background-color: #f8f9fa;
+                                    padding: 30px 40px;
+                                    border-top: 1px solid #e9ecef;
+                                    border-radius: 0 0 8px 8px;
+                                    text-align: center;
+                                "
+                            >
+                                <h4 style="margin: 0 0 10px 0; color: #2c5aa0">
+                                    Metro Reads
+                                </h4>
+                                <p
+                                    style="
+                                        margin: 0;
+                                        font-size: 14px;
+                                        color: #666666;
+                                        line-height: 1.5;
+                                    "
+                                >
+                                    Bateshwar, Sylhet, Metropolitan University
+                                </p>
+                                <p
+                                    style="
+                                        margin-top: 20px;
+                                        font-size: 12px;
+                                        color: #999999;
+                                    "
+                                >
+                                    This email was sent to {{ user_email }}.
+                                    <a href="#" style="color: #999999"
+                                        >Unsubscribe</a
+                                    >.
+                                </p>
+                            </td>
+                        </tr>
+                    </table>
+                </td>
+            </tr>
+        </table>
+    </body>
+</html>

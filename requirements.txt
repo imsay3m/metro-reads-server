@@ -1,0 +1,29 @@
+# Django and Django REST Framework
+django
+djangorestframework
+psycopg2-binary
+drf-yasg
+
+# JWT Authentication
+djangorestframework-simplejwt
+
+# Redis and Caching
+django-redis
+redis
+
+# Celery for background tasks
+celery
+django-celery-beat
+
+# PDF Generation
+reportlab
+
+# Gunicorn for production server
+gunicorn
+
+# Utilities
+python-dotenv
+qrcode
+Pillow
+locust
+django-solo

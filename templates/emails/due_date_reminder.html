@@ -1,0 +1,38 @@
+{% extends "emails/base_email.html" %} {% block title %}Your Library Book is Due
+Soon{% endblock title %} {% block content %}
+<p style="margin: 0 0 25px 0; font-size: 16px">
+    This is a friendly reminder that the following book is due soon. Please
+    return it on time to avoid fines.
+</p>
+<div
+    style="
+        background-color: #f8f9fa;
+        border-left: 4px solid #d73527;
+        padding: 20px;
+        margin: 25px 0;
+    "
+>
+    <h4 style="margin: 0 0 15px 0; color: #2c5aa0">📖 Book Details</h4>
+    <p style="margin: 0; color: #555">
+        <strong>Title:</strong> {{ book_title }}
+    </p>
+    <p style="margin: 0; color: #555">
+        <strong>Due Date:</strong>
+        <strong style="color: #d73527">{{ due_date }}</strong>
+    </p>
+</div>
+<div style="text-align: center; margin: 35px 0">
+    <a
+        href="{{ cta_url }}"
+        style="
+            display: inline-block;
+            background: linear-gradient(135deg, #2c5aa0 0%, #1e3a5f 100%);
+            color: #ffffff;
+            text-decoration: none;
+            padding: 15px 30px;
+            border-radius: 6px;
+        "
+        >Renew Book</a
+    >
+</div>
+{% endblock content %}

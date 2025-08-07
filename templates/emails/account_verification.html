@@ -1,0 +1,43 @@
+{% extends "emails/base_email.html" %} {% block title %}Verify Your Metro Reads
+Account{% endblock title %} {% block content %}
+<p
+    style="
+        margin: 0 0 25px 0;
+        font-size: 16px;
+        line-height: 1.6;
+        color: #555555;
+    "
+>
+    Thank you for registering! To complete your setup and secure your account,
+    please click the button below to verify your email address. This link is
+    valid for 24 hours.
+</p>
+
+<!-- Call-to-Action Button -->
+<div style="text-align: center; margin: 35px 0">
+    <a
+        href="{{ verification_url }}"
+        style="
+            display: inline-block;
+            background: linear-gradient(135deg, #2c5aa0 0%, #1e3a5f 100%);
+            color: #ffffff;
+            text-decoration: none;
+            padding: 15px 30px;
+            border-radius: 6px;
+            font-weight: 600;
+            font-size: 16px;
+        "
+    >
+        Verify My Email Address
+    </a>
+</div>
+
+<p style="font-size: 12px; color: #999; text-align: center">
+    If you're having trouble, copy and paste this URL into your browser:<br />
+    <a
+        href="{{ verification_url }}"
+        style="color: #2c5aa0; word-break: break-all"
+        >{{ verification_url }}</a
+    >
+</p>
+{% endblock content %}

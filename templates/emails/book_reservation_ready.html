@@ -1,0 +1,63 @@
+{% extends "emails/base_email.html" %} {% block title %}Your Book Reservation is
+Ready!{% endblock title %} {% block content %}
+<p
+    style="
+        margin: 0 0 25px 0;
+        font-size: 16px;
+        line-height: 1.6;
+        color: #555555;
+    "
+>
+    {{ main_message }}
+</p>
+
+<!-- Book Info Block -->
+<div
+    style="
+        background-color: #f8f9fa;
+        border-left: 4px solid #2c5aa0;
+        padding: 20px;
+        margin: 25px 0;
+    "
+>
+    <h4 style="margin: 0 0 15px 0; color: #2c5aa0">📖 Book Details</h4>
+    <p style="margin: 0; color: #555">
+        <strong>Title:</strong> {{ book_title }}
+    </p>
+    <p style="margin: 0; color: #555">
+        <strong>Author:</strong> {{ book_author }}
+    </p>
+</div>
+
+<!-- Alert Block -->
+<div
+    style="
+        background-color: #fff3cd;
+        padding: 20px;
+        margin: 25px 0;
+        border-radius: 6px;
+    "
+>
+    <p style="margin: 0; color: #856404">
+        <strong>⚠️ Important:</strong> {{ alert_message }}
+    </p>
+</div>
+
+<!-- Call-to-Action Button -->
+<div style="text-align: center; margin: 35px 0">
+    <a
+        href="{{ cta_url }}"
+        style="
+            display: inline-block;
+            background: linear-gradient(135deg, #2c5aa0 0%, #1e3a5f 100%);
+            color: #ffffff;
+            text-decoration: none;
+            padding: 15px 30px;
+            border-radius: 6px;
+            font-weight: 600;
+        "
+    >
+        {{ cta_text }}
+    </a>
+</div>
+{% endblock content %}

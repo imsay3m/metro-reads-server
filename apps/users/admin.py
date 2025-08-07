@@ -1,0 +1,91 @@
+from django.contrib import admin, messages
+from django.core.files.storage import default_storage
+
+from apps.cards.generators import generate_library_card_pdf
+
+# Imports for the new action
+from apps.cards.models import LibraryCard
+
+from .models import User
+
+
+@admin.register(User)
+class UserAdmin(admin.ModelAdmin):
+    # Add new fields to the list display
+    list_display = (
+        "email",
+        "first_name",
+        "student_id",
+        "department",
+        "role",
+        "is_active",
+    )
+    # Allow filtering by department
+    list_filter = ("role", "is_active", "is_verified", "department")
+    # Allow searching by student ID and department name
+    search_fields = (
+        "email",
+        "first_name",
+        "last_name",
+        "student_id",
+        "department__name",
+    )
+    actions = ["generate_library_cards"]
+
+    # Use fieldsets to group related fields for a cleaner layout
+    fieldsets = (
+        (None, {"fields": ("email", "password")}),
+        ("Personal Info", {"fields": ("first_name", "last_name", "profile_picture")}),
+        ("Academic Info", {"fields": ("department", "student_id", "batch", "section")}),
+        (
+            "Permissions",
+            {
+                "fields": (
+                    "role",
+                    "is_active",
+                    "is_verified",
+                    "is_staff",
+                    "is_superuser",
+                    "groups",
+                    "user_permissions",
+                )
+            },
+        ),
+        ("Important dates", {"fields": ("last_login", "date_joined")}),
+        ("Library Card", {"fields": ("library_card",)}),
+    )
+    # Add password to readonly_fields to prevent accidental viewing of the hash
+    readonly_fields = ("last_login", "date_joined")
+    add_fieldsets = fieldsets  # Use the same layout for adding new users
+
+    @admin.action(description="Generate or Re-generate library card(s)")
+    def generate_library_cards(self, request, queryset):
+        """
+        A custom admin action to create a new library card and generate a PDF for it.
+        """
+        generated_count = 0
+        for user in queryset:
+            # If user already has a card, deactivate the old one.
+            if hasattr(user, "library_card") and user.library_card:
+                user.library_card.is_active = False
+                user.library_card.save()
+
+            # Create a new library card instance
+            new_card = LibraryCard.objects.create()
+            user.library_card = new_card
+            user.save()
+
+            # Generate the PDF file in memory
+            pdf_file = generate_library_card_pdf(user, new_card)
+
+            # Define the save path and save the file to the media storage
+            save_path = f"library_cards/{pdf_file.name}"
+            default_storage.save(save_path, pdf_file)
+
+            generated_count += 1
+
+        self.message_user(
+            request,
+            f"{generated_count} library card(s) were successfully generated.",
+            messages.SUCCESS,
+        )
