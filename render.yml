@@ -1,0 +1,94 @@
+services:
+    # ----------------- #
+    #  Database Service #
+    # ----------------- #
+    - type: psql
+      name: metro-reads-db
+      plan: free
+      databaseName: metro_reads_db
+      user: metro_reads_db_user
+      region: singapore
+
+    # ----------------- #
+    #  Redis Service    #
+    # ----------------- #
+    - type: redis
+      name: metro-reads-redis
+      plan: free
+      region: singapore
+      maxmemoryPolicy: volatile-ttl
+
+    # ----------------- #
+    #  Web Service      #
+    # ----------------- #
+    - type: web
+      name: metro-reads-server
+      plan: free
+      runtime: docker
+      region: singapore
+      healthCheckPath: /admin/login/
+      envVars:
+          - key: DATABASE_URL
+            fromDatabase:
+                name: metro-reads-db
+                property: connectionString
+          - key: REDIS_URL
+            fromRedis:
+                name: metro-reads-redis
+                property: connectionString
+          - key: SECRET_KEY
+            generateValue: true
+          - key: PYTHONUNBUFFERED
+            value: 1
+      disks:
+          - name: media
+            mountPath: /app/media
+            sizeGB: 1
+
+    # -------------------------- #
+    #  Celery Worker Service     #
+    # -------------------------- #
+    - type: worker
+      name: metro-reads-celery-worker
+      plan: free
+      runtime: docker
+      region: singapore
+      envVars:
+          - key: DATABASE_URL
+            fromDatabase:
+                name: metro-reads-db
+                property: connectionString
+          - key: REDIS_URL
+            fromRedis:
+                name: metro-reads-redis
+                property: connectionString
+          - key: SECRET_KEY
+            fromService:
+                type: web
+                name: metro-reads-server
+                envVarKey: SECRET_KEY
+      startCommand: celery -A config worker --loglevel=info
+
+    # ------------------------- #
+    #  Celery Beat Service      #
+    # ------------------------- #
+    - type: worker
+      name: metro-reads-celery-beat
+      plan: free
+      runtime: docker
+      region: singapore
+      envVars:
+          - key: DATABASE_URL
+            fromDatabase:
+                name: metro-reads-db
+                property: connectionString
+          - key: REDIS_URL
+            fromRedis:
+                name: metro-reads-redis
+                property: connectionString
+          - key: SECRET_KEY
+            fromService:
+                type: web
+                name: metro-reads-server
+                envVarKey: SECRET_KEY
+      startCommand: celery -A config beat --loglevel=info --scheduler django_celery_beat.schedulers:DatabaseScheduler
