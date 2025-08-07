@@ -1,57 +1,60 @@
 # --- STAGE 1: Build Stage ---
-# Use a specific, modern version of Python on Debian Bookworm
+# This stage installs dependencies and prepares the application
 FROM python:3.11.13-bookworm AS builder
 
 # Set environment variables
-ENV PYTHONDONTWRITEBYTECODE=1
-ENV PYTHONUNBUFFERED=1
+ENV PYTHONDONTWRITEBYTECODE 1
+ENV PYTHONUNBUFFERED 1
 
-# Set the working directory
 WORKDIR /app
 
-# Install system dependencies required for building Python packages
-# This step is cached and only runs if this line changes
+# Install system dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
     libpq-dev \
-    gcc
+    gcc \
+    && rm -rf /var/lib/apt/lists/*
 
-# Copy the requirements file
-COPY requirements.txt /app/
-
-# Install python dependencies into a virtual environment for a clean setup
+# Install python dependencies into a virtual environment
 RUN python -m venv /opt/venv
 ENV PATH="/opt/venv/bin:$PATH"
+COPY requirements.txt /app/
 RUN pip install --no-cache-dir -r requirements.txt
+
+# Copy the entire project into the builder stage
+COPY . /app/
+
+# Run collectstatic. This gathers all static files (including admin files)
+RUN SECRET_KEY="dummy" python manage.py collectstatic --noinput
 
 
 # --- STAGE 2: Final Stage ---
-# Start from the slim image for a smaller final footprint
 FROM python:3.11.13-slim-bookworm
 
-# Set environment variables
-ENV PYTHONDONTWRITEBYTECODE=1
-ENV PYTHONUNBUFFERED=1
+ENV PYTHONDONTWRITEBYTECODE 1
+ENV PYTHONUNBUFFERED 1
 
-# Set the working directory
 WORKDIR /app
 
 # Copy the virtual environment from the builder stage
 COPY --from=builder /opt/venv /opt/venv
-
-# Activate the virtual environment
 ENV PATH="/opt/venv/bin:$PATH"
 
-# Copy the project code into the container
-COPY . /app/
+# Copy the collected static files from the builder stage
+COPY --from=builder /app/staticfiles /app/staticfiles
 
-# Copy the new startup script into the container
-COPY ./entrypoint.sh /app/entrypoint.sh
-# Make sure the script is executable inside the container
+# Copy the media directory (though it will be empty on build)
+COPY --from=builder /app/media /app/media
+
+# Copy the entrypoint script
+COPY --from=builder /app/entrypoint.sh /app/entrypoint.sh
 RUN chmod +x /app/entrypoint.sh
+
+# Copy the rest of the application code
+COPY . /app/
 
 # Expose the port Gunicorn will run on
 EXPOSE 8000
 
-# Command to run the application. REMOVE the old CMD instruction. The entrypoint script will now handle starting Gunicorn.
-# CMD ["gunicorn", "config.wsgi:application", "--bind", "0.0.0.0:8000"]
+# Set the entrypoint for the container. This runs on every start.
+ENTRYPOINT ["/app/entrypoint.sh"]
