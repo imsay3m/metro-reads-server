@@ -48,6 +48,9 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
     password = serializers.CharField(
         write_only=True, required=True, style={"input_type": "password"}
     )
+    department = serializers.PrimaryKeyRelatedField(
+        queryset=Department.objects.all(), required=False, allow_null=True
+    )
 
     class Meta:
         model = User
@@ -67,11 +70,14 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
         }
 
     def create(self, validated_data):
-        # Use the custom manager's create_user method to handle password hashing
+        """
+        Handles the creation of a new user, including the new academic fields.
+        """
         user = User.objects.create_user(
-            email=validated_data["email"],
-            password=validated_data["password"],
-            first_name=validated_data["first_name"],
-            last_name=validated_data["last_name"],
+            email=validated_data.pop("email"),
+            password=validated_data.pop("password"),
+            first_name=validated_data.pop("first_name"),
+            last_name=validated_data.pop("last_name"),
+            **validated_data
         )
         return user
