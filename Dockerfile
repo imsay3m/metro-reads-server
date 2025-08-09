@@ -42,4 +42,4 @@ RUN chmod +x /app/entrypoint.sh
 COPY . /app/
 RUN mkdir -p /app/media && chown -R 1000 /app/media
 EXPOSE 8000
-ENTRYPOINT ["/app/entrypoint.sh"]
+ENTRYPOINT ["/bin/sh", "/app/entrypoint.sh"]
