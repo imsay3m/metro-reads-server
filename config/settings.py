@@ -24,6 +24,12 @@ CSRF_TRUSTED_ORIGINS = os.getenv("CSRF_TRUSTED_ORIGINS", "http://localhost").spl
 
 # Application definition
 INSTALLED_APPS = [
+    "django.contrib.admin",
+    "django.contrib.auth",
+    "django.contrib.contenttypes",
+    "django.contrib.sessions",
+    "django.contrib.messages",
+    "django.contrib.staticfiles",
     # Our apps
     "apps.users",
     "apps.books",
@@ -32,12 +38,6 @@ INSTALLED_APPS = [
     "apps.queues",
     "apps.site_config",
     "apps.academic",
-    "django.contrib.admin",
-    "django.contrib.auth",
-    "django.contrib.contenttypes",
-    "django.contrib.sessions",
-    "django.contrib.messages",
-    "django.contrib.staticfiles",
     # Third-party apps
     "rest_framework",
     "rest_framework_simplejwt",

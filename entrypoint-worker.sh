@@ -3,11 +3,10 @@
 set -e
 
 # The worker services only need to wait for the database to be ready.
-# They DO NOT run migrations.
 echo "Worker: Waiting for database..."
 python manage.py wait_for_db
 
 echo "Worker: Starting process..."
-# This special command means "execute the command that was passed to this script".
-# In our docker-compose.yml, this will be the 'celery worker' or 'celery beat' command.
+# This command executes whatever command is passed to this script.
+# For our Celery services, this will be the 'celery worker' or 'celery beat' command.
 exec "$@"
