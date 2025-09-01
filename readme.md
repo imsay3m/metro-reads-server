@@ -94,7 +94,7 @@ metro-reads-library/
 ### 1. Clone the Repository
 
 ```bash
-git clone <your-repository-url>
+git clone https://github.com/imsay3m/metro-reads-server
 cd metro-reads-library
 ```
 

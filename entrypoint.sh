@@ -2,17 +2,15 @@
 
 set -e
 
-echo "Waiting for database to be ready..."
+echo "Web service: Waiting for database..."
 python manage.py wait_for_db
 
-# Run database migrations
-echo "Running database migrations..."
+# The 'web' service is now solely responsible for running migrations.
+echo "Web service: Running database migrations..."
 python manage.py migrate --noinput
 
-# Create a superuser from environment variables if it doesn't exist
-echo "Checking for superuser..."
+echo "Web service: Checking for superuser..."
 python manage.py createsuperuser_from_env
 
-# Start the application
-echo "Starting Gunicorn server..."
+echo "Web service: Starting Gunicorn server..."
 exec gunicorn config.wsgi:application --bind 0.0.0.0:8000

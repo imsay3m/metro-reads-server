@@ -24,6 +24,14 @@ CSRF_TRUSTED_ORIGINS = os.getenv("CSRF_TRUSTED_ORIGINS", "http://localhost").spl
 
 # Application definition
 INSTALLED_APPS = [
+    # Our apps
+    "apps.users",
+    "apps.books",
+    "apps.loans",
+    "apps.cards",
+    "apps.queues",
+    "apps.site_config",
+    "apps.academic",
     "django.contrib.admin",
     "django.contrib.auth",
     "django.contrib.contenttypes",
@@ -37,14 +45,6 @@ INSTALLED_APPS = [
     "django_redis",
     "django_celery_beat",
     "solo",
-    # Our apps
-    "apps.users",
-    "apps.books",
-    "apps.loans",
-    "apps.cards",
-    "apps.queues",
-    "apps.site_config",
-    "apps.academic",
 ]
 
 MIDDLEWARE = [

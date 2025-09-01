@@ -10,10 +10,11 @@ x-django-env: &django-env
         - REDIS_PORT=6379
         - SECRET_KEY=${SECRET_KEY}
         - DEBUG=${DEBUG}
+        - DJANGO_ENV=development
 
 services:
     db:
-        image: postgres:17.5-alpine # <-- UPDATED
+        image: postgres:17.5-alpine
         container_name: metro_reads_db
         volumes:
             - postgres_data:/var/lib/postgresql/data/
@@ -23,11 +24,11 @@ services:
             - POSTGRES_PASSWORD=${DB_PASS}
 
     redis:
-        image: redis:8.0.3-alpine # <-- UPDATED
+        image: redis:8.0.3-alpine
         container_name: metro_reads_redis
 
     nginx:
-        image: nginx:1.28.0-alpine-slim # <-- UPDATED
+        image: nginx:1.28.0-alpine-slim
         container_name: metro_reads_nginx
         ports:
             - "80:80"
@@ -43,7 +44,6 @@ services:
             context: .
         image: metro-reads-app:latest
         container_name: metro_reads_web
-        command: gunicorn config.wsgi:application --bind 0.0.0.0:8000
         volumes:
             - .:/app
             - ./media:/app/media
@@ -56,7 +56,8 @@ services:
     celery:
         image: metro-reads-app:latest
         container_name: metro_reads_celery_worker
-        command: celery -A config worker --loglevel=info
+        entrypoint: ["/bin/sh", "/app/entrypoint-worker.sh"]
+        command: ["celery", "-A", "config", "worker", "--loglevel=info"]
         volumes:
             - .:/app
         <<: *django-env
@@ -68,7 +69,17 @@ services:
     celery-beat:
         image: metro-reads-app:latest
         container_name: metro_reads_celery_beat
-        command: celery -A config beat --loglevel=info --scheduler django_celery_beat.schedulers:DatabaseScheduler
+        entrypoint: ["/bin/sh", "/app/entrypoint-worker.sh"]
+        command:
+            [
+                "celery",
+                "-A",
+                "config",
+                "beat",
+                "--loglevel=info",
+                "--scheduler",
+                "django_celery_beat.schedulers:DatabaseScheduler",
+            ]
         volumes:
             - .:/app
         <<: *django-env
@@ -76,7 +87,6 @@ services:
             - web
             - db
             - redis
-
 volumes:
     postgres_data:
     static_volume:
