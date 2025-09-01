@@ -149,48 +149,45 @@ REST_FRAMEWORK = {
 }
 
 REDIS_URL = os.getenv("REDIS_URL")
-# A dictionary to hold connection options, especially for SSL
-CELERY_REDIS_SSL_OPTIONS = {}
-CACHE_REDIS_SSL_OPTIONS = {}
 
 if REDIS_URL:
-    # If we are on a platform like Render with a REDIS_URL
-    redis_info = urlparse(REDIS_URL)
+    # --- Production Configuration (for Render/Railway) ---
 
-    # Check if the scheme is 'rediss' to enable SSL
-    if redis_info.scheme == "rediss":
-        # Celery SSL connection options
-        CELERY_REDIS_SSL_OPTIONS = {"ssl_cert_reqs": None}
-        # Django-redis SSL connection options
-        CACHE_REDIS_SSL_OPTIONS = {"SSL_CERT_REQS": None}
+    # Check if the provided URL uses the secure 'rediss://' scheme
+    USING_SSL = REDIS_URL.startswith("rediss://")
 
-        # --- THIS IS THE FIX ---
-        # Add this dictionary to explicitly configure the result backend for SSL.
-        # This is what the Celery error message is asking for.
-        CELERY_REDIS_BACKEND_KWARGS = {
-            "ssl_cert_reqs": None,
-        }
+    # This is the single, definitive SSL configuration dictionary.
+    # It tells the underlying redis-py library to use SSL without a client cert.
+    REDIS_SSL_OPTIONS = {"ssl_cert_reqs": None} if USING_SSL else {}
 
-    # Celery configuration
+    # Configure the Celery Broker
     CELERY_BROKER_URL = f"{REDIS_URL}/1"
-    CELERY_BROKER_USE_SSL = CELERY_REDIS_SSL_OPTIONS
+    # Use the most modern and explicit setting to pass connection options
+    CELERY_BROKER_TRANSPORT_OPTIONS = REDIS_SSL_OPTIONS
 
+    # Configure the Celery Result Backend
     CELERY_RESULT_BACKEND = f"{REDIS_URL}/1"
-    # This older setting can be kept for compatibility, but the one above is the key.
-    CELERY_REDIS_BACKEND_USE_SSL = CELERY_REDIS_SSL_OPTIONS
+    # THIS IS THE CRITICAL FIX: Pass the same SSL options to the result backend
+    CELERY_RESULT_BACKEND_TRANSPORT_OPTIONS = REDIS_SSL_OPTIONS
 
-    # Django-redis Caching configuration
+    # Configure the Django Cache
     CACHE_LOCATION = f"{REDIS_URL}/0"
+    CACHE_CONNECTION_OPTIONS = REDIS_SSL_OPTIONS
+
 else:
-    # Fallback for local Docker development (no SSL)
+    # --- Local Development Configuration (Fallback) ---
     REDIS_HOST = os.getenv("REDIS_HOST", "redis")
     REDIS_PORT = os.getenv("REDIS_PORT", "6379")
 
     CELERY_BROKER_URL = f"redis://{REDIS_HOST}:{REDIS_PORT}/1"
     CELERY_RESULT_BACKEND = f"redis://{REDIS_HOST}:{REDIS_PORT}/1"
     CACHE_LOCATION = f"redis://{REDIS_HOST}:{REDIS_PORT}/0"
-    # Ensure this is not set for local dev
-    CELERY_REDIS_BACKEND_KWARGS = {}
+
+    # No SSL options for local development
+    CELERY_BROKER_TRANSPORT_OPTIONS = {}
+    CELERY_RESULT_BACKEND_TRANSPORT_OPTIONS = {}
+    CACHE_CONNECTION_OPTIONS = {}
+
 
 # --- Caching Configuration ---
 CACHES = {
@@ -200,8 +197,8 @@ CACHES = {
         "OPTIONS": {
             "CLIENT_CLASS": "django_redis.client.DefaultClient",
             "COMPRESSOR": "django_redis.compressors.zlib.ZlibCompressor",
-            # This will be empty for local dev and populated for Render
-            "CONNECTION_POOL_KWARGS": CACHE_REDIS_SSL_OPTIONS,
+            # This passes the SSL options to the connection pool
+            "CONNECTION_POOL_KWARGS": CACHE_CONNECTION_OPTIONS,
         },
     }
 }
@@ -211,7 +208,6 @@ CELERY_ACCEPT_CONTENT = ["application/json"]
 CELERY_TASK_SERIALIZER = "json"
 CELERY_RESULT_SERIALIZER = "json"
 CELERY_TIMEZONE = "UTC"
-
 # --- Celery Beat Schedule ---
 CELERY_BEAT_SCHEDULE = {
     "check-expired-queues-every-30-mins": {
