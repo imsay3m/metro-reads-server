@@ -44,12 +44,6 @@ services:
             context: .
         image: metro-reads-app:latest
         container_name: metro_reads_web
-        command:
-            [
-                "sh",
-                "-c",
-                "python manage.py createsuperuser_from_env && gunicorn config.wsgi:application --bind 0.0.0.0:8000",
-            ]
         volumes:
             - .:/app
             - ./media:/app/media
@@ -62,6 +56,7 @@ services:
     celery:
         image: metro-reads-app:latest
         container_name: metro_reads_celery_worker
+        entrypoint: ["/bin/sh", "/app/entrypoint-worker.sh"]
         command: ["celery", "-A", "config", "worker", "--loglevel=info"]
         volumes:
             - .:/app
@@ -74,6 +69,7 @@ services:
     celery-beat:
         image: metro-reads-app:latest
         container_name: metro_reads_celery_beat
+        entrypoint: ["/bin/sh", "/app/entrypoint-worker.sh"]
         command:
             [
                 "celery",
