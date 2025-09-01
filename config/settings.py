@@ -6,7 +6,6 @@ import dj_database_url
 from celery.schedules import crontab
 from dotenv import load_dotenv
 
-
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 load_dotenv(os.path.join(BASE_DIR, ".env"))
@@ -153,54 +152,40 @@ REST_FRAMEWORK = {
 REDIS_URL = os.getenv("REDIS_URL")
 
 if REDIS_URL:
-    # --- Production Configuration (for Render/Railway) ---
+    # --- Production Configuration (for Render/Railway/Redis Cloud) ---
 
-    # This single dictionary contains all the necessary options for a secure connection.
-    # It will be used by the broker, result backend, and cache.
-    REDIS_CONNECTION_OPTIONS = {
-        "ssl_cert_reqs": None,  # Tells the client not to require a client-side certificate
-    }
-
-    # Celery configuration
-    CELERY_BROKER_URL = f"{REDIS_URL}/1"
-    CELERY_BROKER_TRANSPORT_OPTIONS = REDIS_CONNECTION_OPTIONS
-
-    CELERY_RESULT_BACKEND = f"{REDIS_URL}/1"
-    # THIS IS THE CRITICAL FIX: Use the modern, explicit setting for the result backend
-    CELERY_RESULT_BACKEND_TRANSPORT_OPTIONS = REDIS_CONNECTION_OPTIONS
-
-    # Django-redis Caching configuration
-    CACHE_LOCATION = f"{REDIS_URL}/0"
-    CACHE_CONNECTION_OPTIONS = REDIS_CONNECTION_OPTIONS
+    # The REDIS_URL provided by your service already contains the password and host.
+    # Managed Redis often uses a single database, so we'll use the base URL for all services.
+    # Celery and django-redis are smart enough to parse this standard URL format.
+    CELERY_BROKER_URL = REDIS_URL
+    CELERY_RESULT_BACKEND = REDIS_URL
+    CACHE_LOCATION = REDIS_URL
 
 else:
     # --- Local Development Configuration (Fallback) ---
+    # This remains the same and works with your local Docker setup.
     REDIS_HOST = os.getenv("REDIS_HOST", "redis")
     REDIS_PORT = os.getenv("REDIS_PORT", "6379")
 
+    # We can use separate DB indexes locally because the Docker Redis image supports it.
     CELERY_BROKER_URL = f"redis://{REDIS_HOST}:{REDIS_PORT}/1"
     CELERY_RESULT_BACKEND = f"redis://{REDIS_HOST}:{REDIS_PORT}/1"
     CACHE_LOCATION = f"redis://{REDIS_HOST}:{REDIS_PORT}/0"
-
-    # No SSL options needed for local development
-    CELERY_BROKER_TRANSPORT_OPTIONS = {}
-    CELERY_RESULT_BACKEND_TRANSPORT_OPTIONS = {}
-    CACHE_CONNECTION_OPTIONS = {}
 
 
 # --- Caching Configuration ---
 CACHES = {
     "default": {
         "BACKEND": "django_redis.cache.RedisCache",
-        "LOCATION": CACHE_LOCATION,
+        "LOCATION": CACHE_LOCATION,  # This will be the full URL in production
         "OPTIONS": {
             "CLIENT_CLASS": "django_redis.client.DefaultClient",
             "COMPRESSOR": "django_redis.compressors.zlib.ZlibCompressor",
-            # This passes the SSL options to the connection pool
-            "CONNECTION_POOL_KWARGS": CACHE_CONNECTION_OPTIONS,
+            # No need for separate SSL options here; the URL is sufficient.
         },
     }
 }
+
 
 # --- Celery App Configuration ---
 CELERY_ACCEPT_CONTENT = ["application/json"]
