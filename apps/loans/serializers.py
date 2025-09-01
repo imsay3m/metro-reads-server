@@ -6,7 +6,7 @@ from rest_framework import serializers
 from apps.queues.models import BookQueue
 from apps.site_config.models import LibrarySettings
 
-from .models import Loan
+from .models import Fine, Loan
 
 
 class LoanSerializer(serializers.ModelSerializer):
@@ -76,3 +76,21 @@ class CreateLoanSerializer(serializers.ModelSerializer):
             due_date=timezone.now() + relativedelta(days=settings.loan_duration_days),
         )
         return loan
+
+
+class FineSerializer(serializers.ModelSerializer):
+    # Make related fields read-only and more descriptive
+    user_email = serializers.CharField(source="user.email", read_only=True)
+    book_title = serializers.CharField(source="loan.book.title", read_only=True)
+
+    class Meta:
+        model = Fine
+        fields = [
+            "id",
+            "user_email",
+            "book_title",
+            "amount",
+            "status",
+            "created_at",
+            "updated_at",
+        ]

@@ -164,12 +164,20 @@ if REDIS_URL:
         # Django-redis SSL connection options
         CACHE_REDIS_SSL_OPTIONS = {"SSL_CERT_REQS": None}
 
+        # --- THIS IS THE FIX ---
+        # Add this dictionary to explicitly configure the result backend for SSL.
+        # This is what the Celery error message is asking for.
+        CELERY_REDIS_BACKEND_KWARGS = {
+            "ssl_cert_reqs": None,
+        }
+
     # Celery configuration
     CELERY_BROKER_URL = f"{REDIS_URL}/1"
     CELERY_BROKER_USE_SSL = CELERY_REDIS_SSL_OPTIONS
-    CELERY_REDIS_BACKEND_USE_SSL = CELERY_REDIS_SSL_OPTIONS
 
     CELERY_RESULT_BACKEND = f"{REDIS_URL}/1"
+    # This older setting can be kept for compatibility, but the one above is the key.
+    CELERY_REDIS_BACKEND_USE_SSL = CELERY_REDIS_SSL_OPTIONS
 
     # Django-redis Caching configuration
     CACHE_LOCATION = f"{REDIS_URL}/0"
@@ -181,6 +189,8 @@ else:
     CELERY_BROKER_URL = f"redis://{REDIS_HOST}:{REDIS_PORT}/1"
     CELERY_RESULT_BACKEND = f"redis://{REDIS_HOST}:{REDIS_PORT}/1"
     CACHE_LOCATION = f"redis://{REDIS_HOST}:{REDIS_PORT}/0"
+    # Ensure this is not set for local dev
+    CELERY_REDIS_BACKEND_KWARGS = {}
 
 # --- Caching Configuration ---
 CACHES = {
