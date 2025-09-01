@@ -9,8 +9,10 @@ class BookAdmin(admin.ModelAdmin):
         "title",
         "author",
         "isbn",
-        "published_date",
+        "publisher",
         "total_copies",
         "available_copies",
     )
-    search_fields = ("title", "author", "isbn")
+    search_fields = ("title", "author", "isbn", "publisher")
+    list_filter = ("genres", "publisher")
+    filter_horizontal = ("genres",)

@@ -1,20 +1,18 @@
 from django.contrib import admin
 
-from .models import Department
+from .models import Department, Genre
 
 
 @admin.register(Department)
 class DepartmentAdmin(admin.ModelAdmin):
-    """
-    Admin configuration for the Department model.
-    This makes the Department model manageable in the Django admin panel.
-    """
-
-    # Fields to display in the list view of all departments
-    list_display = ("name", "code")
-
-    # Fields that can be searched
+    list_display = ("name", "code", "slug")
     search_fields = ("name", "code")
-
-    # Fields to use for ordering the list
     ordering = ("name",)
+    prepopulated_fields = {"slug": ("name",)}
+
+
+@admin.register(Genre)
+class GenreAdmin(admin.ModelAdmin):
+    list_display = ("name", "slug")
+    search_fields = ("name",)
+    prepopulated_fields = {"slug": ("name",)}

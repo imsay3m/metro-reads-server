@@ -1,4 +1,4 @@
-from rest_framework import mixins, permissions, status, viewsets
+from rest_framework import mixins, permissions, viewsets
 from rest_framework.response import Response
 
 from .models import BookQueue
@@ -23,9 +23,7 @@ class QueueViewSet(
         """
         return BookQueue.objects.filter(
             user=self.request.user, status=BookQueue.QueueStatus.ACTIVE
-        ).select_related(
-            "book"
-        )  # Optimization
+        ).select_related("book")
 
     def perform_destroy(self, instance):
         """

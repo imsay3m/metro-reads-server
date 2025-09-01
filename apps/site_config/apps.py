@@ -11,13 +11,10 @@ class SiteConfigConfig(AppConfig):
         This method is called when the app is ready.
         We monkey-patch the default admin site's index view here.
         """
-        # Import the data gathering function here to avoid startup issues
         from .utils import get_dashboard_context
 
-        # Get a reference to the default admin site
         admin_site = admin.site
 
-        # Store the original index view so we can call it later
         original_index = admin_site.index
 
         def new_index(request, extra_context=None):
@@ -27,8 +24,6 @@ class SiteConfigConfig(AppConfig):
             extra_context = extra_context or {}
             extra_context.update(get_dashboard_context())
 
-            # Call the original index view with our new, richer context
             return original_index(request, extra_context)
 
-        # Replace the default admin's index method with our new one
         admin_site.index = new_index

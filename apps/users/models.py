@@ -41,6 +41,12 @@ class UserManager(BaseUserManager):
 
 
 class User(AbstractBaseUser, PermissionsMixin):
+
+    class AccountStatus(models.TextChoices):
+        GOOD_STANDING = "GOOD_STANDING", "Good Standing"
+        FINES_OWED = "FINES_OWED", "Fines Owed"
+        SUSPENDED = "SUSPENDED", "Suspended"
+
     class Role(models.TextChoices):
         ADMIN = "ADMIN", "Admin"
         LIBRARIAN = "LIBRARIAN", "Librarian"
@@ -64,7 +70,17 @@ class User(AbstractBaseUser, PermissionsMixin):
     section = models.CharField(max_length=10, blank=True)
 
     profile_picture = models.ImageField(
-        upload_to="profile_pics/", null=True, blank=True
+        upload_to="profile_pics/",
+        null=True,
+        blank=True,
+        default="profile_pics/user_avatar.png",
+    )
+    phone_number = models.CharField(max_length=20, blank=True)
+    address = models.TextField(blank=True)
+    account_status = models.CharField(
+        max_length=20,
+        choices=AccountStatus.choices,
+        default=AccountStatus.GOOD_STANDING,
     )
     is_active = models.BooleanField(default=False)
     # New field to specifically track verification status.

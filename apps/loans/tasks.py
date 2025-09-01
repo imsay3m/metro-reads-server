@@ -1,12 +1,11 @@
 from celery import shared_task
 from django.conf import settings
-from django.db.models import F  # For atomic updates
 from django.utils import timezone
 
 from apps.site_config.models import LibrarySettings
 from apps.users.tasks import send_verification_email_task
 
-from .models import Loan
+from .models import Fine, Loan
 
 
 @shared_task
@@ -30,7 +29,7 @@ def send_due_date_reminders():
             "user_email": user.email,
             "book_title": book.title,
             "due_date": loan.due_date.strftime("%A, %B %d, %Y"),
-            "cta_url": full_cta_url,  # <-- Use the dynamic URL
+            "cta_url": full_cta_url,
             "cta_text": "View Your Loans",
         }
         send_verification_email_task.delay(
@@ -53,7 +52,6 @@ def calculate_and_notify_fines():
 
     today = timezone.now().date()
 
-    # Find all loans that are overdue and not yet returned.
     overdue_loans = Loan.objects.filter(due_date__date__lt=today, is_returned=False)
 
     fines_updated = 0
@@ -63,19 +61,15 @@ def calculate_and_notify_fines():
         days_overdue = (today - loan.due_date.date()).days
         calculated_fine = days_overdue * fine_per_day
 
-        # Get or create the fine object for this loan
         fine, created = Fine.objects.get_or_create(
             loan=loan, user=loan.user, defaults={"amount": calculated_fine}
         )
 
-        # If the fine already existed, update its amount
         if not created and fine.amount != calculated_fine:
             fine.amount = calculated_fine
             fine.save()
             fines_updated += 1
 
-        # --- Send Notification Email ---
-        # We only send if the fine is PENDING.
         if fine.status == Fine.FineStatus.PENDING and fine.amount > 0:
             user = loan.user
             book = loan.book

@@ -1,7 +1,8 @@
 from django.core.cache import cache
+from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import filters, permissions, status, viewsets
 from rest_framework.decorators import action
-from rest_framework.response import Response  # Make sure Response is imported
+from rest_framework.response import Response
 
 from apps.queues.models import BookQueue
 from apps.queues.serializers import JoinQueueSerializer
@@ -23,10 +24,16 @@ class BookViewSet(viewsets.ModelViewSet):
     - Caches are invalidated on update/destroy.
     """
 
-    queryset = Book.objects.all()
-    serializer_class = BookSerializer
-    filter_backends = [filters.SearchFilter]
-    search_fields = ["title", "author", "isbn"]
+    filter_backends = [filters.SearchFilter, DjangoFilterBackend]
+    search_fields = ["title", "author", "isbn", "publisher"]
+    filterset_fields = {
+        "genres__slug": [
+            "in",
+            "exact",
+        ],  # ?genres__slug=science-fiction or ?genres__slug__in=sci-fi,mystery
+        "author": ["exact"],
+        "publisher": ["exact"],
+    }
 
     def get_permissions(self):
         if self.action in ["list", "retrieve", "join_queue"]:
@@ -43,17 +50,12 @@ class BookViewSet(viewsets.ModelViewSet):
         search_query = request.query_params.get("search", "all")
         cache_key = f"books:list:{search_query}"
 
-        # --- FIX 1: Check cache first ---
         cached_data = cache.get(cache_key)
         if cached_data:
-            # When returning from cache, wrap the data in a Response object.
             return Response(cached_data)
 
-        # If not in cache, proceed as normal
         response = super().list(request, *args, **kwargs)
 
-        # --- FIX 2: Cache response.data, not the whole response ---
-        # Only cache successful responses.
         if response.status_code == 200:
             cache.set(cache_key, response.data, CACHE_TTL_BOOKS_LIST)
 
@@ -66,15 +68,12 @@ class BookViewSet(viewsets.ModelViewSet):
         book_id = self.kwargs.get("pk")
         cache_key = f"book:detail:{book_id}"
 
-        # --- FIX 1: Check cache first ---
         cached_data = cache.get(cache_key)
         if cached_data:
-            # When returning from cache, wrap the data in a Response object.
             return Response(cached_data)
 
         response = super().retrieve(request, *args, **kwargs)
 
-        # --- FIX 2: Cache response.data, not the whole response ---
         if response.status_code == 200:
             cache.set(cache_key, response.data, CACHE_TTL_BOOK_DETAIL)
 
@@ -86,7 +85,6 @@ class BookViewSet(viewsets.ModelViewSet):
         """
         instance = serializer.save()
         cache.delete(f"book:detail:{instance.pk}")
-        # Also invalidate general search caches
         cache.delete_pattern("books:list:*")
 
     def perform_destroy(self, instance):
@@ -96,7 +94,6 @@ class BookViewSet(viewsets.ModelViewSet):
         book_id = instance.pk
         instance.delete()
         cache.delete(f"book:detail:{book_id}")
-        # Also invalidate general search caches
         cache.delete_pattern("books:list:*")
 
     @action(detail=True, methods=["post"], url_path="join-queue")

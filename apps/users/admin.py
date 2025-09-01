@@ -11,18 +11,16 @@ from .models import User
 
 @admin.register(User)
 class UserAdmin(admin.ModelAdmin):
-    # Add new fields to the list display
     list_display = (
         "email",
         "first_name",
         "student_id",
         "department",
         "role",
+        "account_status",
         "is_active",
     )
-    # Allow filtering by department
-    list_filter = ("role", "is_active", "is_verified", "department")
-    # Allow searching by student ID and department name
+    list_filter = ("role", "is_active", "account_status", "department")
     search_fields = (
         "email",
         "first_name",
@@ -35,19 +33,29 @@ class UserAdmin(admin.ModelAdmin):
     # Use fieldsets to group related fields for a cleaner layout
     fieldsets = (
         (None, {"fields": ("email", "password")}),
-        ("Personal Info", {"fields": ("first_name", "last_name", "profile_picture")}),
+        (
+            "Personal Info",
+            {
+                "fields": (
+                    "first_name",
+                    "last_name",
+                    "profile_picture",
+                    "phone_number",
+                    "address",
+                )
+            },
+        ),
         ("Academic Info", {"fields": ("department", "student_id", "batch", "section")}),
         (
-            "Permissions",
+            "Permissions & Status",
             {
                 "fields": (
                     "role",
+                    "account_status",
                     "is_active",
                     "is_verified",
                     "is_staff",
                     "is_superuser",
-                    "groups",
-                    "user_permissions",
                 )
             },
         ),

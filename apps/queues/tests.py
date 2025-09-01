@@ -17,7 +17,7 @@ class QueueLogicTests(TestCase):
             isbn="9999999999999",
             published_date=timezone.now().date(),
             total_copies=1,
-            available_copies=0,  # Book is already loaned out
+            available_copies=0,
         )
         self.user1 = User.objects.create_user(email="user1@test.com", password="p")
         self.user2 = User.objects.create_user(email="user2@test.com", password="p")
@@ -31,14 +31,10 @@ class QueueLogicTests(TestCase):
         # User2 joins second.
         BookQueue.objects.create(book=self.book, user=self.user2)
 
-        # A copy of the book becomes available, trigger promotion.
         promote_next_in_queue(self.book.id)
 
-        # Check the status of the queue entries.
         q1 = BookQueue.objects.get(user=self.user1, book=self.book)
         q2 = BookQueue.objects.get(user=self.user2, book=self.book)
 
-        # Assert that user1 (first in) is now RESERVED.
         self.assertEqual(q1.status, BookQueue.QueueStatus.RESERVED)
-        # Assert that user2 (second in) is still ACTIVE.
         self.assertEqual(q2.status, BookQueue.QueueStatus.ACTIVE)

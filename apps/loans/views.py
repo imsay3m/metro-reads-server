@@ -1,11 +1,9 @@
-from django.core.cache import cache  # Import cache
+from django.core.cache import cache
 from django.utils import timezone
 from rest_framework import permissions, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
 
-# Corrected Imports:
-from apps.books.models import Book
 from apps.queues.tasks import promote_next_in_queue
 from apps.users.permissions import IsAdminOrLibrarian
 
@@ -49,7 +47,6 @@ class LoanViewSet(viewsets.ModelViewSet):
         if self.action in ["list", "retrieve", "create", "return_book"]:
             permission_classes = [permissions.IsAuthenticated]
         else:
-            # Disallow update/destroy via the standard ViewSet methods
             permission_classes = [IsAdminOrLibrarian]
         return [permission() for permission in permission_classes]
 
@@ -62,19 +59,14 @@ class LoanViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        # Update loan status
         loan.is_returned = True
         loan.return_date = timezone.now()
         loan.save()
 
         book = loan.book
 
-        # --- MODIFIED LOGIC ---
-        # Instead of just incrementing copies, we trigger the queue promotion process.
-        # This task will handle making the book available OR reserving it for the next user.
         promote_next_in_queue.delay(book.id)
 
-        # Invalidate the cache for this book
         cache.delete(f"book:detail:{book.pk}")
         cache.delete_pattern("books:list:*")
 

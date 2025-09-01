@@ -28,6 +28,9 @@ class UserSerializer(serializers.ModelSerializer):
             "student_id",
             "batch",
             "section",
+            "phone_number",
+            "address",
+            "account_status",
         ]
 
     def get_library_card_id(self, obj):
@@ -63,6 +66,8 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
             "student_id",
             "batch",
             "section",
+            "phone_number",
+            "address",
         ]
         extra_kwargs = {
             "first_name": {"required": True},

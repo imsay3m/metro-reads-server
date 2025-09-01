@@ -13,6 +13,15 @@ class Loan(models.Model):
     due_date = models.DateTimeField()
     return_date = models.DateTimeField(null=True, blank=True)
     is_returned = models.BooleanField(default=False)
+    renewals_made = models.PositiveSmallIntegerField(default=0)
+    checked_out_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="processed_checkouts",
+        limit_choices_to={"role__in": ["LIBRARIAN", "ADMIN"]},
+    )
 
     def __str__(self):
         return f"{self.user.email} loaned {self.book.title}"

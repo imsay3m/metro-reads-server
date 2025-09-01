@@ -1,7 +1,8 @@
 import uuid
+
+from dateutil.relativedelta import relativedelta
 from django.db import models
 from django.utils import timezone
-from dateutil.relativedelta import relativedelta
 
 
 def get_expiry_date():
@@ -12,6 +13,7 @@ class LibraryCard(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     issue_date = models.DateTimeField(auto_now_add=True)
     expiry_date = models.DateTimeField(default=get_expiry_date)
+    pdf_card = models.FileField(upload_to="library_cards/", null=True, blank=True)
     is_active = models.BooleanField(default=True)
 
     def __str__(self):

@@ -1,9 +1,9 @@
 from rest_framework import serializers
 
 # Corrected Imports:
-from apps.books.models import Book  # <-- IMPORT Book from the correct app
+from apps.books.models import Book
 
-from .models import BookQueue  # <-- IMPORT BookQueue from the local models
+from .models import BookQueue
 
 
 class BookQueueSerializer(serializers.ModelSerializer):
@@ -54,12 +54,8 @@ class JoinQueueSerializer(serializers.Serializer):
         except Book.DoesNotExist:
             raise serializers.ValidationError({"detail": "Book not found."})
 
-        # --- IMPROVED VALIDATION LOGIC ---
-        # We now check for any existing queue entry for this user and book,
-        # regardless of its status.
         existing_queue_entry = BookQueue.objects.filter(book=book, user=user).first()
         if existing_queue_entry:
-            # Provide a specific message based on the status.
             if existing_queue_entry.status == BookQueue.QueueStatus.ACTIVE:
                 raise serializers.ValidationError(
                     {"detail": "You are already in the active queue for this book."}
@@ -70,10 +66,6 @@ class JoinQueueSerializer(serializers.Serializer):
                         "detail": "This book is already reserved for you. Please borrow it directly."
                     }
                 )
-            # You could add more checks here for FULFILLED or EXPIRED if you want,
-            # but for now, preventing re-joining is the key.
-            # A more advanced option would be to "reactivate" an expired entry.
-            # For now, we'll just block it.
             raise serializers.ValidationError(
                 {
                     "detail": "You have a previous queue entry for this book and cannot rejoin at this time."

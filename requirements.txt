@@ -1,6 +1,7 @@
 backports.tarfile
 dj-database-url
 django-celery-beat
+django-filter
 django-redis
 django-solo
 djangorestframework-simplejwt
