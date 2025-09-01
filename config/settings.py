@@ -148,31 +148,29 @@ REST_FRAMEWORK = {
     "DEFAULT_FILTER_BACKENDS": ["django_filters.rest_framework.FilterSet"],
 }
 
+
 REDIS_URL = os.getenv("REDIS_URL")
 
 if REDIS_URL:
     # --- Production Configuration (for Render/Railway) ---
 
-    # Check if the provided URL uses the secure 'rediss://' scheme
-    USING_SSL = REDIS_URL.startswith("rediss://")
+    # This single dictionary contains all the necessary options for a secure connection.
+    # It will be used by the broker, result backend, and cache.
+    REDIS_CONNECTION_OPTIONS = {
+        "ssl_cert_reqs": None,  # Tells the client not to require a client-side certificate
+    }
 
-    # This is the single, definitive SSL configuration dictionary.
-    # It tells the underlying redis-py library to use SSL without a client cert.
-    REDIS_SSL_OPTIONS = {"ssl_cert_reqs": None} if USING_SSL else {}
-
-    # Configure the Celery Broker
+    # Celery configuration
     CELERY_BROKER_URL = f"{REDIS_URL}/1"
-    # Use the most modern and explicit setting to pass connection options
-    CELERY_BROKER_TRANSPORT_OPTIONS = REDIS_SSL_OPTIONS
+    CELERY_BROKER_TRANSPORT_OPTIONS = REDIS_CONNECTION_OPTIONS
 
-    # Configure the Celery Result Backend
     CELERY_RESULT_BACKEND = f"{REDIS_URL}/1"
-    # THIS IS THE CRITICAL FIX: Pass the same SSL options to the result backend
-    CELERY_RESULT_BACKEND_TRANSPORT_OPTIONS = REDIS_SSL_OPTIONS
+    # THIS IS THE CRITICAL FIX: Use the modern, explicit setting for the result backend
+    CELERY_RESULT_BACKEND_TRANSPORT_OPTIONS = REDIS_CONNECTION_OPTIONS
 
-    # Configure the Django Cache
+    # Django-redis Caching configuration
     CACHE_LOCATION = f"{REDIS_URL}/0"
-    CACHE_CONNECTION_OPTIONS = REDIS_SSL_OPTIONS
+    CACHE_CONNECTION_OPTIONS = REDIS_CONNECTION_OPTIONS
 
 else:
     # --- Local Development Configuration (Fallback) ---
@@ -183,7 +181,7 @@ else:
     CELERY_RESULT_BACKEND = f"redis://{REDIS_HOST}:{REDIS_PORT}/1"
     CACHE_LOCATION = f"redis://{REDIS_HOST}:{REDIS_PORT}/0"
 
-    # No SSL options for local development
+    # No SSL options needed for local development
     CELERY_BROKER_TRANSPORT_OPTIONS = {}
     CELERY_RESULT_BACKEND_TRANSPORT_OPTIONS = {}
     CACHE_CONNECTION_OPTIONS = {}
@@ -208,6 +206,7 @@ CELERY_ACCEPT_CONTENT = ["application/json"]
 CELERY_TASK_SERIALIZER = "json"
 CELERY_RESULT_SERIALIZER = "json"
 CELERY_TIMEZONE = "UTC"
+
 # --- Celery Beat Schedule ---
 CELERY_BEAT_SCHEDULE = {
     "check-expired-queues-every-30-mins": {
