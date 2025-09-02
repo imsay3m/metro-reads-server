@@ -5,7 +5,6 @@ set -e
 echo "Waiting for database to be ready..."
 python manage.py wait_for_db
 
-# Run database migrations (this is now run only by the 'web' service)
 echo "Running database migrations..."
 python manage.py migrate --noinput
 
