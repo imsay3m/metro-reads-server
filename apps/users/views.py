@@ -7,7 +7,6 @@ from rest_framework import generics, permissions, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from rest_framework_simplejwt.views import TokenObtainPairView
 
 from apps.cards.generators import generate_library_card_pdf
 from apps.cards.models import LibraryCard
@@ -15,7 +14,7 @@ from apps.cards.models import LibraryCard
 from .models import User
 from .permissions import IsAdminOrLibrarian
 from .serializers import UserRegistrationSerializer, UserSerializer
-from .tasks import send_verification_email_task
+from .utils import send_metro_reads_email
 
 
 class UserRegistrationView(generics.CreateAPIView):
@@ -48,9 +47,12 @@ class UserRegistrationView(generics.CreateAPIView):
             "verification_url": frontend_verification_url,  # <-- Use the new dynamic frontend URL
         }
 
-        send_verification_email_task.delay(
-            subject, "emails/account_verification.html", context, [user.email]
-        )
+        # send_verification_email_task.delay(
+        #     subject, "emails/account_verification.html", context, [user.email]
+        # )
+        template_name = "emails/account_verification.html"
+        recipient_list = [user.email]
+        send_metro_reads_email(subject, template_name, context, recipient_list)
 
         response_data = {
             "user_data": serializer.data,
