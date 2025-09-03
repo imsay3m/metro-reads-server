@@ -145,7 +145,7 @@ REST_FRAMEWORK = {
         # "rest_framework.authentication.BasicAuthentication",
         # 'rest_framework.authentication.SessionAuthentication',
     ),
-    "DEFAULT_FILTER_BACKENDS": ["django_filters.rest_framework.FilterSet"],
+    "DEFAULT_FILTER_BACKENDS": ["django_filters.rest_framework.DjangoFilterBackend"],
 }
 
 
@@ -157,8 +157,34 @@ if REDIS_URL:
     # The REDIS_URL provided by your service already contains the password and host.
     # Managed Redis often uses a single database, so we'll use the base URL for all services.
     # Celery and django-redis are smart enough to parse this standard URL format.
-    CELERY_BROKER_URL = REDIS_URL
-    CELERY_RESULT_BACKEND = REDIS_URL
+    # Celery with rediss:// requires ssl_cert_reqs param on the backend URL.
+    # Append it if missing to avoid ValueError on secure Redis providers.
+    def _maybe_add_ssl_param(url: str) -> str:
+        try:
+            from urllib.parse import parse_qs, urlencode, urlparse, urlunparse
+        except Exception:
+            return url
+
+        parsed = urlparse(url)
+        if parsed.scheme != "rediss":
+            return url
+        qs = parse_qs(parsed.query)
+        if "ssl_cert_reqs" not in qs:
+            qs["ssl_cert_reqs"] = ["none"]
+        new_query = urlencode(qs, doseq=True)
+        return urlunparse(
+            (
+                parsed.scheme,
+                parsed.netloc,
+                parsed.path,
+                parsed.params,
+                new_query,
+                parsed.fragment,
+            )
+        )
+
+    CELERY_BROKER_URL = _maybe_add_ssl_param(REDIS_URL)
+    CELERY_RESULT_BACKEND = _maybe_add_ssl_param(REDIS_URL)
     CACHE_LOCATION = REDIS_URL
 
 else:

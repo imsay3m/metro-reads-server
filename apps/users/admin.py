@@ -1,10 +1,9 @@
 from django.contrib import admin, messages
 from django.core.files.storage import default_storage
 
-from apps.cards.generators import generate_library_card_pdf
-
 # Imports for the new action
 from apps.cards.models import LibraryCard
+from apps.cards.tasks import generate_library_card_pdf_task
 
 from .models import User
 
@@ -83,12 +82,8 @@ class UserAdmin(admin.ModelAdmin):
             user.library_card = new_card
             user.save()
 
-            # Generate the PDF file in memory
-            pdf_file = generate_library_card_pdf(user, new_card)
-
-            # Define the save path and save the file to the media storage
-            save_path = f"library_cards/{pdf_file.name}"
-            default_storage.save(save_path, pdf_file)
+            # Enqueue async PDF generation task
+            generate_library_card_pdf_task.delay(user.id, str(new_card.id))
 
             generated_count += 1
 

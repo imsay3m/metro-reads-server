@@ -218,4 +218,3 @@ def generate_library_card_pdf(user, card):
     pdf_file = ContentFile(buffer.getvalue(), name=file_name)
 
     return pdf_file
-    return pdf_file

@@ -8,8 +8,8 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from apps.cards.generators import generate_library_card_pdf
 from apps.cards.models import LibraryCard
+from apps.cards.tasks import generate_library_card_pdf_task
 
 from .models import User
 from .permissions import IsAdminOrLibrarian
@@ -139,22 +139,12 @@ class UserViewSet(viewsets.ReadOnlyModelViewSet):
         user.library_card = new_card
         user.save()
 
-        # Generate and save the PDF (This part can be slow, ideal for a Celery task)
-        # For now, we do it synchronously
-        try:
-            generate_library_card_pdf(user, new_card)
-            # We don't save the PDF to the model itself as per our design,
-            # but the generator function would save it to the MEDIA_ROOT.
-            # A real implementation would likely return a URL to the PDF.
-            return Response(
-                {
-                    "status": "Library card generated successfully.",
-                    "card_id": new_card.id,
-                },
-                status=status.HTTP_201_CREATED,
-            )
-        except Exception as e:
-            return Response(
-                {"error": f"Failed to generate PDF: {str(e)}"},
-                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            )
+        # Enqueue async PDF generation
+        generate_library_card_pdf_task.delay(user.id, str(new_card.id))
+        return Response(
+            {
+                "status": "Library card generation enqueued.",
+                "card_id": new_card.id,
+            },
+            status=status.HTTP_202_ACCEPTED,
+        )

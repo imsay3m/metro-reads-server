@@ -24,11 +24,11 @@ def promote_next_in_queue(book_id):
         )
 
         if next_in_queue:
-            settings = LibrarySettings.get_solo()
+            library_settings = LibrarySettings.get_solo()
             user = next_in_queue.user
             next_in_queue.status = BookQueue.QueueStatus.RESERVED
             next_in_queue.expires_at = timezone.now() + timezone.timedelta(
-                hours=settings.reservation_expiry_hours
+                hours=library_settings.reservation_expiry_hours
             )
             next_in_queue.save()
 
