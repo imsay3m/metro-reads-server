@@ -14,7 +14,7 @@ from apps.cards.models import LibraryCard
 from .models import User
 from .permissions import IsAdminOrLibrarian
 from .serializers import UserRegistrationSerializer, UserSerializer
-from .utils import send_metro_reads_email
+from .tasks import send_verification_email_task
 
 
 class UserRegistrationView(generics.CreateAPIView):
@@ -44,15 +44,12 @@ class UserRegistrationView(generics.CreateAPIView):
             "email_title": "Account Verification",
             "user_name": user.first_name,
             "user_email": user.email,
-            "verification_url": frontend_verification_url,  # <-- Use the new dynamic frontend URL
+            "verification_url": frontend_verification_url,
         }
 
-        # send_verification_email_task.delay(
-        #     subject, "emails/account_verification.html", context, [user.email]
-        # )
-        template_name = "emails/account_verification.html"
-        recipient_list = [user.email]
-        send_metro_reads_email(subject, template_name, context, recipient_list)
+        send_verification_email_task.delay(
+            subject, "emails/account_verification.html", context, [user.email]
+        )
 
         response_data = {
             "user_data": serializer.data,
