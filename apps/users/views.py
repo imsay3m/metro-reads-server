@@ -39,22 +39,28 @@ class UserRegistrationView(generics.CreateAPIView):
             f"{settings.FRONTEND_BASE_URL}/users/verify/{uid}/{token}/"
         )
 
-        subject = "Welcome to Metro Reads! Please Verify Your Account"
-        context = {
-            "email_title": "Account Verification",
-            "user_name": user.first_name,
-            "user_email": user.email,
-            "verification_url": frontend_verification_url,
-        }
+        # Either send verification email, or auto-activate based on env flag
+        if getattr(settings, "EMAIL_VERIFICATION_ENABLED", True):
+            subject = "Welcome to Metro Reads! Please Verify Your Account"
+            context = {
+                "email_title": "Account Verification",
+                "user_name": user.first_name,
+                "user_email": user.email,
+                "verification_url": frontend_verification_url,
+            }
 
-        send_verification_email_task.delay(
-            subject, "emails/account_verification.html", context, [user.email]
-        )
+            send_verification_email_task.delay(
+                subject, "emails/account_verification.html", context, [user.email]
+            )
+            verification_detail = "Registration successful. Please check your email to verify your account."
+        else:
+            # Auto-activate and verify immediately when verification is disabled
+            user.is_active = True
+            user.is_verified = True
+            user.save(update_fields=["is_active", "is_verified"])
+            verification_detail = "Registration successful. Your account is active."
 
-        response_data = {
-            "user_data": serializer.data,
-            "detail": "Registration successful. Please check your email to verify your account.",
-        }
+        response_data = {"user_data": serializer.data, "detail": verification_detail}
 
         headers = self.get_success_headers(serializer.data)
         return Response(response_data, status=status.HTTP_201_CREATED, headers=headers)

@@ -244,6 +244,11 @@ EMAIL_USE_TLS = True
 EMAIL_HOST_USER = os.getenv("MAIL_USER")
 EMAIL_HOST_PASSWORD = os.getenv("MAIL_PASSWORD")
 
+# Toggle email verification for user registration (default: on)
+EMAIL_VERIFICATION_ENABLED = (
+    os.getenv("EMAIL_VERIFICATION_ENABLED", "true").lower() == "true"
+)
+
 # Frontend Configuration
 FRONTEND_BASE_URL = os.getenv(
     "FRONTEND_BASE_URL", "http://localhost:8000"
