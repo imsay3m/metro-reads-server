@@ -36,6 +36,7 @@ urlpatterns = [
     path("api/loans/", include("apps.loans.urls")),
     path("api/queues/", include("apps.queues.urls")),
     path("api/academic/", include("apps.academic.urls")),
+    path("api/wishlist/", include("apps.wishlist.urls")),
 ]
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

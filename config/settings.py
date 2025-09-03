@@ -33,6 +33,7 @@ INSTALLED_APPS = [
     "apps.queues",
     "apps.site_config",
     "apps.academic",
+    "apps.wishlist",
     # Default Django apps
     "django.contrib.admin",
     "django.contrib.auth",
