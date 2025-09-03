@@ -24,6 +24,7 @@ class BookViewSet(viewsets.ModelViewSet):
     - Caches are invalidated on update/destroy.
     """
 
+    queryset = Book.objects.all()
     serializer_class = BookSerializer
 
     filter_backends = [filters.SearchFilter, DjangoFilterBackend]
