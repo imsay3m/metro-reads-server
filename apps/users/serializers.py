@@ -34,6 +34,8 @@ class UserSerializer(serializers.ModelSerializer):
             "account_status",
         ]
 
+    profile_picture = serializers.ImageField(write_only=True, required=False)
+
     def get_library_card_id(self, obj):
         # Return the card ID if it exists, otherwise return None
         return (
@@ -85,11 +87,14 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
             "section",
             "phone_number",
             "address",
+            "profile_picture",
         ]
         extra_kwargs = {
             "first_name": {"required": True},
             "last_name": {"required": True},
         }
+
+    profile_picture = serializers.ImageField(write_only=True, required=False)
 
     def create(self, validated_data):
         image = validated_data.pop("profile_picture", None)
