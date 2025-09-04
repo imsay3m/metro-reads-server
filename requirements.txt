@@ -21,3 +21,4 @@ zope-event
 whitenoise
 requests
 imgbbpy
+drf-nested-routers

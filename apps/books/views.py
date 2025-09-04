@@ -12,8 +12,8 @@ from apps.queues.serializers import JoinQueueSerializer
 from apps.users.permissions import IsAdminOrLibrarian
 
 from .filters import BookFilter  # Import our new custom filter class
-from .models import Book
-from .serializers import BookSerializer
+from .models import Book, Review  # Add Review
+from .serializers import BookSerializer, ReviewSerializer
 
 # Cache timeouts (in seconds)
 CACHE_TTL_BOOKS_LIST = 60 * 5  # 5 minutes
@@ -127,3 +127,31 @@ class BookViewSet(viewsets.ModelViewSet):
             )
         else:
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class ReviewViewSet(viewsets.ModelViewSet):
+    """
+    ViewSet for creating, viewing, updating, and deleting reviews
+    for a specific book.
+    """
+
+    serializer_class = ReviewSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        """
+        This view should return a list of all the reviews
+        for the book as determined by the book_pk portion of the URL.
+        """
+        # We get the book_pk from the URL kwargs
+        book_pk = self.kwargs.get("book_pk")
+        return Review.objects.filter(book__pk=book_pk)
+
+    def perform_create(self, serializer):
+        """
+        Associate the review with the current user and the book from the URL.
+        """
+        book_pk = self.kwargs.get("book_pk")
+        book = Book.objects.get(pk=book_pk)
+        # The user is automatically available from the request
+        serializer.save(user=self.request.user, book=book)

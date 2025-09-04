@@ -2,14 +2,25 @@ from rest_framework import serializers
 
 from apps.academic.models import Genre
 from apps.site_config.utils import upload_image_to_imgbb
+from apps.users.serializers import UserSerializer
 
-from .models import Book
+from .models import Book, Review
 
 
 class GenreSerializer(serializers.ModelSerializer):
     class Meta:
         model = Genre
         fields = ["id", "name", "slug"]
+
+
+class ReviewSerializer(serializers.ModelSerializer):
+    # Display nested user information (read-only) instead of just the user ID
+    user = UserSerializer(read_only=True)
+
+    class Meta:
+        model = Review
+        fields = ["id", "user", "text", "created_at"]
+        read_only_fields = ["user"]  # User is set automatically from the request
 
 
 class BookSerializer(serializers.ModelSerializer):
@@ -23,6 +34,7 @@ class BookSerializer(serializers.ModelSerializer):
     )
     upload_cover_image = serializers.ImageField(write_only=True, required=False)
     cover_image = serializers.URLField(read_only=True)
+    reviews = ReviewSerializer(many=True, read_only=True)
 
     class Meta:
         model = Book
@@ -41,6 +53,7 @@ class BookSerializer(serializers.ModelSerializer):
             "genre_ids",
             "upload_cover_image",
             "cover_image",
+            "reviews",
         ]
 
     def update(self, instance, validated_data):

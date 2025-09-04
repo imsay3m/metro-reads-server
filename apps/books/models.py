@@ -1,3 +1,4 @@
+from django.conf import settings
 from django.db import models
 
 from apps.academic.models import Genre
@@ -18,3 +19,19 @@ class Book(models.Model):
 
     def __str__(self):
         return f"{self.title} by {self.author}"
+
+
+class Review(models.Model):
+    book = models.ForeignKey(Book, on_delete=models.CASCADE, related_name="reviews")
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="reviews"
+    )
+    text = models.TextField(max_length=1000)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["-created_at"]  # Show the newest reviews first
+
+    def __str__(self):
+        return f"Review by {self.user.email} for {self.book.title}"
