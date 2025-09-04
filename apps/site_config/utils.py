@@ -1,9 +1,10 @@
+import base64
 import os
 from datetime import timedelta
 
+import requests
 from django.db.models import Count, Q
 from django.utils import timezone
-from imgbbpy import SyncClient
 
 from apps.books.models import Book
 from apps.loans.models import Loan
@@ -78,7 +79,7 @@ def get_dashboard_context():
 
 def upload_image_to_imgbb(image_file):
     """
-    Uploads an in-memory image file to ImgBB using the 'imgbbpy' wrapper
+    Uploads an in-memory image file to ImgBB using a direct API call
     and returns the display URL.
     """
     api_key = os.getenv("IMGBB_API_KEY")
@@ -87,14 +88,23 @@ def upload_image_to_imgbb(image_file):
         return None
 
     try:
-        # Initialize the client with your API key
-        client = SyncClient(api_key)
-        image = client.upload(file=image_file, name=image_file.name)
+        image_bytes = image_file.read()
+        image_b64 = base64.b64encode(image_bytes).decode("utf-8")  # decode to str
 
-        # The wrapper returns an object with several URLs.
-        # image.url is the direct display URL.
-        return image.url
+        url = "https://api.imgbb.com/1/upload"
+        payload = {
+            "key": api_key,
+            "image": image_b64,
+        }
+
+        response = requests.post(url, data=payload)  # use data=payload
+        response.raise_for_status()
+        result = response.json()
+        return result["data"]["url"]
+
+    except requests.exceptions.RequestException as e:
+        print(f"CRITICAL ERROR: Network error during ImgBB upload: {e}")
+        return None
     except Exception as e:
-        # In a real app, you would use proper logging (import logging)
         print(f"CRITICAL ERROR: Failed to upload image to ImgBB. Reason: {e}")
         return None

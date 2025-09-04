@@ -22,40 +22,66 @@ class BookSerializer(serializers.ModelSerializer):
         required=False,
     )
     upload_cover_image = serializers.ImageField(write_only=True, required=False)
+    cover_image = serializers.URLField(read_only=True)
 
     class Meta:
         model = Book
-        fields = "__all__"
-        read_only_fields = ["cover_image"]
-
-    def create(self, validated_data):
-        # Pop the upload field before creating the object
-        image_file = validated_data.pop("upload_cover_image", None)
-
-        # Create the book instance first
-        book = super().create(validated_data)
-
-        # If an image was provided, upload it and update the new object
-        if image_file:
-            image_url = upload_image_to_imgbb(image_file)
-            if image_url:
-                book.cover_image = image_url
-                book.save()
-
-        return book
+        fields = [
+            "id",
+            "title",
+            "author",
+            "isbn",
+            "published_date",
+            "total_copies",
+            "available_copies",
+            "description",
+            "publisher",
+            "page_count",
+            "genres",
+            "genre_ids",
+            "upload_cover_image",
+            "cover_image",
+        ]
 
     def update(self, instance, validated_data):
-        # Pop the upload field before updating the object
+        # --- START DEBUGGING ---
+        print("--- Inside BookSerializer UPDATE method ---")
+        print(f"Initial validated_data: {validated_data}")
+
         image_file = validated_data.pop("upload_cover_image", None)
+        print(f"Popped image_file: {image_file}")
+        # --- END DEBUGGING ---
 
-        # Update the book instance first
-        book = super().update(instance, validated_data)
+        # Perform the standard update for all other fields
+        instance = super().update(instance, validated_data)
 
-        # If an image was provided, upload it and update the instance
+        if image_file:
+            print(">>> Image file exists, attempting to upload to ImgBB...")
+            image_url = upload_image_to_imgbb(image_file)
+
+            # --- START DEBUGGING ---
+            print(f"URL received from ImgBB: {image_url}")
+            # --- END DEBUGGING ---
+
+            if image_url:
+                print(f">>> ImgBB URL is valid. Saving '{image_url}' to instance...")
+                instance.cover_image = image_url
+                instance.save(update_fields=["cover_image"])
+            else:
+                print(">>> ImgBB URL is None. Skipping save.")
+
+        print(
+            f"--- Final instance cover_image before returning: {instance.cover_image} ---"
+        )
+        return instance
+
+    # Add the same logic to the create method for completeness
+    def create(self, validated_data):
+        image_file = validated_data.pop("upload_cover_image", None)
+        instance = super().create(validated_data)
         if image_file:
             image_url = upload_image_to_imgbb(image_file)
             if image_url:
-                book.cover_image = image_url
-                book.save()
-
-        return book
+                instance.cover_image = image_url
+                instance.save(update_fields=["cover_image"])
+        return instance
