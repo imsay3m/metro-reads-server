@@ -9,7 +9,7 @@ from .models import Book
 class GenreSerializer(serializers.ModelSerializer):
     class Meta:
         model = Genre
-        fields = ["id", "name"]
+        fields = ["id", "name", "slug"]
 
 
 class BookSerializer(serializers.ModelSerializer):

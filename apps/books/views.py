@@ -8,6 +8,7 @@ from apps.queues.models import BookQueue
 from apps.queues.serializers import JoinQueueSerializer
 from apps.users.permissions import IsAdminOrLibrarian
 
+from .filters import BookFilter  # Import our new custom filter class
 from .models import Book
 from .serializers import BookSerializer
 
@@ -26,17 +27,9 @@ class BookViewSet(viewsets.ModelViewSet):
 
     queryset = Book.objects.all()
     serializer_class = BookSerializer
-
     filter_backends = [filters.SearchFilter, DjangoFilterBackend]
     search_fields = ["title", "author", "isbn", "publisher"]
-    filterset_fields = {
-        "genres__slug": [
-            "in",
-            "exact",
-        ],  # ?genres__slug=science-fiction or ?genres__slug__in=sci-fi,mystery
-        "author": ["exact"],
-        "publisher": ["exact"],
-    }
+    filterset_class = BookFilter
 
     def get_permissions(self):
         if self.action in ["list", "retrieve", "join_queue"]:
