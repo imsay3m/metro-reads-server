@@ -1,6 +1,7 @@
 from rest_framework import serializers
 
 from apps.academic.models import Genre
+from apps.users.utils import upload_image_to_imgbb
 
 from .models import Book
 
@@ -24,3 +25,17 @@ class BookSerializer(serializers.ModelSerializer):
     class Meta:
         model = Book
         fields = "__all__"
+
+    def create(self, validated_data):
+        image = self.initial_data.get("cover_image")
+        if image:
+            imgbb_url = upload_image_to_imgbb(image)
+            validated_data["cover_image"] = imgbb_url
+        return super().create(validated_data)
+
+    def update(self, instance, validated_data):
+        image = self.initial_data.get("cover_image")
+        if image:
+            imgbb_url = upload_image_to_imgbb(image)
+            validated_data["cover_image"] = imgbb_url
+        return super().update(instance, validated_data)

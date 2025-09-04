@@ -3,6 +3,7 @@ from rest_framework import serializers
 from apps.academic.models import Department
 
 from .models import User
+from .utils import upload_image_to_imgbb
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -41,6 +42,22 @@ class UserSerializer(serializers.ModelSerializer):
             else None
         )
 
+    def update(self, instance, validated_data):
+        image = validated_data.pop("profile_picture", None)
+        if image:
+            imgbb_url = upload_image_to_imgbb(image)
+            instance.profile_picture = imgbb_url
+        return super().update(instance, validated_data)
+
+    def create(self, validated_data):
+        image = validated_data.pop("profile_picture", None)
+        user = super().create(validated_data)
+        if image:
+            imgbb_url = upload_image_to_imgbb(image)
+            user.profile_picture = imgbb_url
+            user.save()
+        return user
+
 
 class UserRegistrationSerializer(serializers.ModelSerializer):
     """
@@ -75,9 +92,7 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
         }
 
     def create(self, validated_data):
-        """
-        Handles the creation of a new user, including the new academic fields.
-        """
+        image = validated_data.pop("profile_picture", None)
         user = User.objects.create_user(
             email=validated_data.pop("email"),
             password=validated_data.pop("password"),
@@ -85,4 +100,8 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
             last_name=validated_data.pop("last_name"),
             **validated_data
         )
+        if image:
+            imgbb_url = upload_image_to_imgbb(image)
+            user.profile_picture = imgbb_url
+            user.save()
         return user

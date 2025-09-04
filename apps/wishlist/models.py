@@ -2,6 +2,9 @@ from django.conf import settings
 from django.db import models
 
 
+# ...existing code...
+
+
 class Wishlist(models.Model):
     """
     Model representing a user's wishlist of books.

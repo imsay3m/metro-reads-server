@@ -19,3 +19,4 @@ tomli
 websocket-client
 zope-event
 whitenoise
+requests

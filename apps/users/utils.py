@@ -1,3 +1,6 @@
+import os
+
+import requests
 from django.conf import settings
 from django.core.mail import send_mail
 from django.template.loader import render_to_string
@@ -35,3 +38,21 @@ def send_metro_reads_email(subject, template_name, context, recipient_list):
         # In a real app, you would log this error
         print(f"Error sending email to {recipient_list}: {e}")
         return False
+
+
+def upload_image_to_imgbb(image_file):
+    """
+    Uploads an image file to imgbb and returns the image URL.
+    """
+    imgbb_api_key = os.getenv("IMGBB_API_KEY")
+    url = "https://api.imgbb.com/1/upload"
+    payload = {
+        "key": imgbb_api_key,
+        "image": image_file.read(),
+    }
+    response = requests.post(
+        url, files={"image": image_file}, data={"key": imgbb_api_key}
+    )
+    response.raise_for_status()
+    data = response.json()
+    return data["data"]["url"]
