@@ -3,17 +3,17 @@ from rest_framework import serializers
 from apps.academic.models import Department
 
 from .models import User
-from .utils import upload_image_to_imgbb
+from apps.site_config.utils import upload_image_to_imgbb
 
 
 class UserSerializer(serializers.ModelSerializer):
-    """
-    Serializer for retrieving User information.
-    """
-
-    # Use SerializerMethodField to handle the OneToOne relationship gracefully
     library_card_id = serializers.SerializerMethodField()
-    department = serializers.StringRelatedField()
+    department = serializers.StringRelatedField(
+        read_only=True
+    )  # Department is read-only here
+
+    # CORRECTED: Use a distinct name for the upload field
+    upload_profile_picture = serializers.ImageField(write_only=True, required=False)
 
     class Meta:
         model = User
@@ -32,12 +32,11 @@ class UserSerializer(serializers.ModelSerializer):
             "phone_number",
             "address",
             "account_status",
+            "upload_profile_picture",
         ]
-
-    profile_picture = serializers.ImageField(write_only=True, required=False)
+        read_only_fields = ["profile_picture"]
 
     def get_library_card_id(self, obj):
-        # Return the card ID if it exists, otherwise return None
         return (
             obj.library_card.id
             if hasattr(obj, "library_card") and obj.library_card
@@ -45,34 +44,25 @@ class UserSerializer(serializers.ModelSerializer):
         )
 
     def update(self, instance, validated_data):
-        image = validated_data.pop("profile_picture", None)
-        if image:
-            imgbb_url = upload_image_to_imgbb(image)
-            instance.profile_picture = imgbb_url
-        return super().update(instance, validated_data)
-
-    def create(self, validated_data):
-        image = validated_data.pop("profile_picture", None)
-        user = super().create(validated_data)
-        if image:
-            imgbb_url = upload_image_to_imgbb(image)
-            user.profile_picture = imgbb_url
-            user.save()
+        image_file = validated_data.pop("upload_profile_picture", None)
+        user = super().update(instance, validated_data)
+        if image_file:
+            imgbb_url = upload_image_to_imgbb(image_file)
+            if imgbb_url:
+                user.profile_picture = imgbb_url
+                user.save()
         return user
 
 
 class UserRegistrationSerializer(serializers.ModelSerializer):
-    """
-    Serializer for creating new Users (Registration).
-    Handles password hashing.
-    """
-
     password = serializers.CharField(
         write_only=True, required=True, style={"input_type": "password"}
     )
     department = serializers.PrimaryKeyRelatedField(
         queryset=Department.objects.all(), required=False, allow_null=True
     )
+    # CORRECTED: Use a distinct name
+    upload_profile_picture = serializers.ImageField(write_only=True, required=False)
 
     class Meta:
         model = User
@@ -87,26 +77,24 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
             "section",
             "phone_number",
             "address",
-            "profile_picture",
+            "upload_profile_picture",  # Use the distinct name
         ]
         extra_kwargs = {
             "first_name": {"required": True},
             "last_name": {"required": True},
         }
 
-    profile_picture = serializers.ImageField(write_only=True, required=False)
-
     def create(self, validated_data):
-        image = validated_data.pop("profile_picture", None)
+        image_file = validated_data.pop("upload_profile_picture", None)
+        # Use the custom manager's create_user method
         user = User.objects.create_user(
             email=validated_data.pop("email"),
             password=validated_data.pop("password"),
-            first_name=validated_data.pop("first_name"),
-            last_name=validated_data.pop("last_name"),
             **validated_data
         )
-        if image:
-            imgbb_url = upload_image_to_imgbb(image)
-            user.profile_picture = imgbb_url
-            user.save()
+        if image_file:
+            imgbb_url = upload_image_to_imgbb(image_file)
+            if imgbb_url:
+                user.profile_picture = imgbb_url
+                user.save()
         return user

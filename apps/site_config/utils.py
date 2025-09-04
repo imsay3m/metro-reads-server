@@ -1,7 +1,9 @@
+import os
 from datetime import timedelta
 
 from django.db.models import Count, Q
 from django.utils import timezone
+from imgbbpy import client
 
 from apps.books.models import Book
 from apps.loans.models import Loan
@@ -72,3 +74,29 @@ def get_dashboard_context():
         "chart_data": chart_data,
         "total_loans_this_week": total_loans_this_week,
     }
+
+
+def upload_image_to_imgbb(image_file):
+    """
+    Uploads an in-memory image file to ImgBB using the 'imgbbpy' wrapper
+    and returns the display URL.
+    """
+    api_key = os.getenv("IMGBB_API_KEY")
+    if not api_key:
+        print("CRITICAL ERROR: IMGBB_API_KEY is missing from environment variables.")
+        return None
+
+    try:
+        # Initialize the client with your API key
+        uploader = client.Client(api_key)
+
+        # image_file.read() gets the binary content needed for the upload
+        image = uploader.upload(file=image_file.read(), name=image_file.name)
+
+        # The wrapper returns an object with several URLs.
+        # image.url is the direct display URL.
+        return image.url
+    except Exception as e:
+        # In a real app, you would use proper logging (import logging)
+        print(f"CRITICAL ERROR: Failed to upload image to ImgBB. Reason: {e}")
+        return None

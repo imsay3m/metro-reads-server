@@ -20,3 +20,4 @@ websocket-client
 zope-event
 whitenoise
 requests
+imgbbpy

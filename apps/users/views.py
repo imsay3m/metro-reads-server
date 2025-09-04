@@ -99,7 +99,7 @@ class UserVerificationView(APIView):
             )
 
 
-class UserProfileView(generics.RetrieveAPIView):
+class UserProfileView(generics.RetrieveUpdateAPIView):
     """
     API view for retrieving the profile of the currently authenticated user.
     """

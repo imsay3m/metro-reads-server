@@ -69,12 +69,7 @@ class User(AbstractBaseUser, PermissionsMixin):
     batch = models.IntegerField(null=True, blank=True)
     section = models.CharField(max_length=10, blank=True)
 
-    profile_picture = models.ImageField(
-        upload_to="profile_pics/",
-        null=True,
-        blank=True,
-        default="profile_pics/user_avatar.png",
-    )
+    profile_picture = models.URLField(max_length=500, null=True, blank=True)
     phone_number = models.CharField(max_length=20, blank=True)
     address = models.TextField(blank=True)
     account_status = models.CharField(
