@@ -20,6 +20,8 @@ class WishlistCreateSerializer(serializers.ModelSerializer):
     Simplified serializer for creating wishlist items.
     """
 
+    book_id = serializers.IntegerField(write_only=True)
+
     class Meta:
         model = Wishlist
         fields = ["book_id"]
