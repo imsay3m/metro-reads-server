@@ -1,3 +1,6 @@
+import hashlib
+import json
+
 from django.core.cache import cache
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import filters, permissions, status, viewsets
@@ -41,15 +44,29 @@ class BookViewSet(viewsets.ModelViewSet):
 
     def list(self, request, *args, **kwargs):
         """
-        Overrides the default list action to implement caching for search results.
+        Overrides the default list action to implement caching for search results
+        and filters. The cache key is now generated from all query parameters.
         """
-        search_query = request.query_params.get("search", "all")
-        cache_key = f"books:list:{search_query}"
+
+        # --- THE FIX: Generate a unique key from all query params ---
+        # Sort the query params to ensure the order doesn't change the key
+        # e.g., ?a=1&b=2 should have the same key as ?b=2&a=1
+        sorted_params = sorted(request.query_params.items())
+
+        # Convert the sorted list of tuples to a JSON string
+        params_string = json.dumps(sorted_params)
+
+        # Hash the string to create a short, fixed-length, and safe cache key
+        params_hash = hashlib.md5(params_string.encode("utf-8")).hexdigest()
+
+        cache_key = f"books:list:{params_hash}"
 
         cached_data = cache.get(cache_key)
         if cached_data:
+            print(f"--- CACHE HIT for key: {cache_key} ---")  # Optional: for debugging
             return Response(cached_data)
 
+        print(f"--- CACHE MISS for key: {cache_key} ---")  # Optional: for debugging
         response = super().list(request, *args, **kwargs)
 
         if response.status_code == 200:
