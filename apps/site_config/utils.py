@@ -3,7 +3,7 @@ from datetime import timedelta
 
 from django.db.models import Count, Q
 from django.utils import timezone
-from imgbbpy import ImgBB
+from imgbbpy import SyncClient
 
 from apps.books.models import Book
 from apps.loans.models import Loan
@@ -88,8 +88,8 @@ def upload_image_to_imgbb(image_file):
 
     try:
         # Initialize the client with your API key
-        uploader = ImgBB(api_key)
-        image = uploader.upload(file=image_file.read(), name=image_file.name)
+        client = SyncClient(api_key)
+        image = client.upload(file=image_file, name=image_file.name)
 
         # The wrapper returns an object with several URLs.
         # image.url is the direct display URL.
